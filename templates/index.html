@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transferencia SFTP → GCP - Reportes SIM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .alert {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .alert-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
+        .alert-content h3 {
+            color: #856404;
+            margin-bottom: 5px;
+        }
+
+        .alert-content p {
+            color: #856404;
+            margin: 0;
+        }
+
+        .status-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .status-value {
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .status-loading {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-warning {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .action-section {
+            text-align: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .result.error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+
+        .result h3 {
+            margin-bottom: 10px;
+        }
+
+        .result-details {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .sftp-info {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .sftp-info h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .sftp-info p {
+            color: #1565c0;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Transferencia SFTP → GCP</h1>
+            <p>Automatización de carga de reportes SIM</p>
+        </div>
+
+        <div class="alert">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+                <h3>¡IMPORTANTE!</h3>
+                <p>Asegúrate de estar conectado a la VPN antes de iniciar el proceso. La doble autenticación debe haberse completado exitosamente.</p>
+            </div>
+        </div>
+
+        <div class="sftp-info">
+            <h4>📋 Información del Servidor SFTP</h4>
+            <p><strong>Servidor:</strong> 10.180.214.22:22</p>
+            <p><strong>Usuario:</strong> ftpuser</p>
+            <p><strong>Destino:</strong> xa-entel-data/Otros</p>
+        </div>
+
+        <div class="status-section">
+            <h3 style="margin-bottom: 15px; color: #333;">📊 Estado del Sistema</h3>
+            
+            <div class="status-item">
+                <span class="status-label">🔗 Conexión VPN</span>
+                <span class="status-value status-warning">Manual - Verificar</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">☁️ Acceso GCP Bucket</span>
+                <span id="gcp-status" class="status-value status-loading">Verificando...</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">📅 Última fecha cargada</span>
+                <span id="last-date" class="status-value status-loading">Consultando...</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">📁 Archivos pendientes</span>
+                <span id="pending-files" class="status-value status-loading">Calculando...</span>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button id="start-btn" class="btn btn-primary" onclick="startTransfer()" disabled>
+                🚀 Iniciar Proceso de Transferencia
+            </button>
+            
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <span>Procesando transferencia...</span>
+            </div>
+            
+            <div id="result" class="result">
+                <h3 id="result-title"></h3>
+                <p id="result-message"></p>
+                <div id="result-details" class="result-details"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Verificar estado al cargar la página
+        window.onload = function() {
+            checkStatus();
+        };
+
+        function checkStatus() {
+            fetch('/api/check_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Actualizar estado GCP
+                        const gcpStatus = document.getElementById('gcp-status');
+                        gcpStatus.textContent = '✅ Conectado';
+                        gcpStatus.className = 'status-value status-success';
+                        
+                        // Actualizar última fecha
+                        const lastDate = document.getElementById('last-date');
+                        if (data.last_upload_date) {
+                            lastDate.textContent = data.last_upload_date;
+                            lastDate.className = 'status-value status-success';
+                        } else {
+                            lastDate.textContent = 'Sin archivos';
+                            lastDate.className = 'status-value status-warning';
+                        }
+                        
+                        // Actualizar archivos pendientes
+                        const pendingFiles = document.getElementById('pending-files');
+                        if (data.days_pending > 0) {
+                            pendingFiles.textContent = `${data.days_pending} días`;
+                            pendingFiles.className = 'status-value status-warning';
+                        } else {
+                            pendingFiles.textContent = 'Al día';
+                            pendingFiles.className = 'status-value status-success';
+                        }
+                        
+                        // Habilitar botón si todo está OK
+                        document.getElementById('start-btn').disabled = false;
+                        
+                    } else {
+                        // Error en conexión GCP
+                        const gcpStatus = document.getElementById('gcp-status');
+                        gcpStatus.textContent = '❌ Error';
+                        gcpStatus.className = 'status-value status-error';
+                        
+                        showResult('error', 'Error de Conexión', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showResult('error', 'Error de Conexión', 'No se pudo conectar al servidor');
+                });
+        }
+
+        function startTransfer() {
+            // Deshabilitar botón y mostrar loading
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('result').style.display = 'none';
+            
+            fetch('/api/start_transfer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.success) {
+                    let details = '';
+                    if (data.files_processed > 0) {
+                        details = `
+                            📊 Resumen del proceso:
+                            • Período: ${data.date_range || 'N/A'}
+                            • Archivos encontrados: ${data.files_found || 0}
+                            • Archivos procesados: ${data.files_processed || 0}
+                            • Archivos fallidos: ${data.files_failed || 0}
+                            
+                            📁 Archivos subidos:
+                            ${data.uploaded_files ? data.uploaded_files.map(f => `• ${f}`).join('\n') : 'Ninguno'}
+                        `;
+                    }
+                    
+                    showResult('success', '✅ Proceso Completado', data.message, details);
+                } else {
+                    showResult('error', '❌ Error en el Proceso', data.message);
+                }
+                
+                // Habilitar botón nuevamente
+                document.getElementById('start-btn').disabled = false;
+                
+                // Actualizar estado
+                setTimeout(checkStatus, 2000);
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('start-btn').disabled = false;
+                
+                console.error('Error:', error);
+                showResult('error', '❌ Error de Conexión', 'No se pudo conectar al servidor');
+            });
+        }
+
+        function showResult(type, title, message, details = '') {
+            const result = document.getElementById('result');
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+            const resultDetails = document.getElementById('result-details');
+            
+            result.className = `result ${type}`;
+            resultTitle.textContent = title;
+            resultMessage.textContent = message;
+            
+            if (details) {
+                resultDetails.textContent = details;
+                resultDetails.style.display = 'block';
+            } else {
+                resultDetails.style.display = 'none';
+            }
+            
+            result.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
