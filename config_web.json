@@ -1,0 +1,31 @@
+{
+    "sftp": {
+        "hostname": "10.180.214.22",
+        "port": 22,
+        "username": "ftpuser",
+        "password": "PhTimwe.321",
+        "remote_directory": "/",
+        "file_pattern": "*.gz"
+    },
+    "gcp": {
+        "project_id": "beside-352612",
+        "bucket_name": "xa-entel-data",
+        "destination_folder": "Otros/",
+        "service_account_path": "service-account.json"
+    },
+    "processing": {
+        "temp_directory": "./temp",
+        "keep_local_files": false,
+        "file_date_pattern": "\\d{8}",
+        "max_days_back": 30
+    },
+    "web": {
+        "host": "127.0.0.1",
+        "port": 5000,
+        "debug": true
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "transfer.log"
+    }
+}

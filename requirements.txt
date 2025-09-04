@@ -1,0 +1,22 @@
+# Dependencias para automatización SFTP → GCP
+
+# Aplicación Web
+Flask==3.0.0
+
+# Conexión SFTP
+paramiko==3.3.1
+
+# Google Cloud Storage
+google-cloud-storage==2.10.0
+
+# Utilidades adicionales
+python-dotenv==1.0.0
+
+# Para scheduling (opcional, si usas APScheduler en lugar de Task Scheduler)
+APScheduler==3.10.4
+
+# Para notificaciones por email (opcional)
+# smtplib ya viene incluido en Python estándar
+
+# Para logging mejorado (opcional)
+colorlog==6.7.0
